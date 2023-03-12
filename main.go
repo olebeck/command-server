@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"sync"
+	"time"
 
 	"github.com/sandertv/mcwss"
 	"github.com/sandertv/mcwss/protocol/event"
@@ -48,11 +49,25 @@ func main() {
 			}()
 		} else {
 			for _, p := range players {
+				t := time.NewTimer(3 * time.Second)
+				has_run := false
+				go func() {
+					<-t.C
+					if !has_run {
+						w.Write([]byte("Timed Out"))
+						w.Close()
+						has_run = true
+					}
+				}()
+
 				p.Exec(cmd, func(data map[string]any) {
 					logrus.Infof("Command %s\n%+#v", cmd, data)
-					body, _ := json.MarshalIndent(data, "", "\t")
-					w.Write(body)
-					w.Close()
+					if !has_run {
+						body, _ := json.MarshalIndent(data, "", "\t")
+						w.Write(body)
+						w.Close()
+						has_run = true
+					}
 				})
 			}
 		}
