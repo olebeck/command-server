@@ -41,17 +41,20 @@ func main() {
 
 	runAll := func(cmd string, w io.WriteCloser) {
 		l.Lock()
-		for _, p := range players {
-			p.Exec(cmd, func(data map[string]any) {
-				logrus.Infof("Command %s\n%+#v", cmd, data)
-				body, _ := json.MarshalIndent(data, "", "\t")
-				w.Write(body)
-				w.Close()
-			})
-		}
 		if len(players) == 0 {
-			w.Write([]byte("No Client Connected"))
-			w.Close()
+			go func() {
+				w.Write([]byte("No Client Connected"))
+				w.Close()
+			}()
+		} else {
+			for _, p := range players {
+				p.Exec(cmd, func(data map[string]any) {
+					logrus.Infof("Command %s\n%+#v", cmd, data)
+					body, _ := json.MarshalIndent(data, "", "\t")
+					w.Write(body)
+					w.Close()
+				})
+			}
 		}
 		l.Unlock()
 	}
