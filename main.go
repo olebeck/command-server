@@ -49,6 +49,10 @@ func main() {
 				w.Close()
 			})
 		}
+		if len(players) == 0 {
+			w.Write([]byte("No Client Connected"))
+			w.Close()
+		}
 		l.Unlock()
 	}
 
