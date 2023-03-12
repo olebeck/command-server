@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"io"
+	"net/url"
 	"sync"
 	"time"
 
@@ -86,7 +87,10 @@ func main() {
 	})
 
 	app.Get("/Exec/+", func(c *fiber.Ctx) error {
-		cmd := c.Params("+")
+		cmd, err := url.QueryUnescape(c.Params("+"))
+		if err != nil {
+			return err
+		}
 
 		r, w := io.Pipe()
 		runAll(cmd, w)
