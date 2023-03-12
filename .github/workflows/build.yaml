@@ -1,0 +1,28 @@
+name: ci-build
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '1.20'
+          check-latest: true
+          cache: true
+
+      - name: build
+        run: |
+          go get
+          GOOS=windows go build
+      
+      - name: upload command-server.exe
+        uses: actions/upload-artifact@v3
+        with:
+          name: command-server.exe
+          path: command-server.exe
