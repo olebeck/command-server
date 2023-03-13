@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/url"
 	"sync"
@@ -62,7 +63,12 @@ func main() {
 				}()
 
 				p.Exec(cmd, func(data map[string]any) {
-					logrus.Infof("Command %s\n%+#v", cmd, data)
+					logrus.Infof("Command %s", cmd)
+					if message, ok := data["statusMessage"]; ok {
+						fmt.Printf("Result:\n%s\n\n", message)
+					} else {
+						fmt.Printf("Result:\n%#+v\n\n", data)
+					}
 					if !has_run {
 						body, _ := json.MarshalIndent(data, "", "\t")
 						w.Write(body)
@@ -98,16 +104,14 @@ func main() {
 		return c.Status(200).SendStream(r)
 	})
 
-	app.Use("/ws", func(c *fiber.Ctx) error {
+	app.Use("/", func(c *fiber.Ctx) error {
 		if websocket.IsWebSocketUpgrade(c) {
-			return c.Next()
+			return websocket.New(func(c *websocket.Conn) {
+				server.HandleConnection(c)
+			})(c)
 		}
-		return fiber.ErrUpgradeRequired
+		return c.Next()
 	})
-
-	app.Get("/ws", websocket.New(func(c *websocket.Conn) {
-		server.HandleConnection(c)
-	}))
 
 	err := app.Listen(":8080")
 	if err != nil {
